@@ -55,12 +55,16 @@ Re-run it if your computer's LAN IP changes, then re-flash the ESP32.
 ```bash
 docker compose up -d --build
 ```
-Orders land in `./order-ledger/` (a git repository). To push every order to a remote repository:
+Orders land in `./order-ledger/` (a git repository). To push every order to the `orders` branch of this repository
+(code stays on `main`):
 ```bash
-LEDGER_REMOTE_URL=https://github.com/<you>/<orders-repo>.git \
-LEDGER_USERNAME=<you> LEDGER_TOKEN=<personal-access-token> \
+LEDGER_REMOTE_URL=https://github.com/iiitrke/iot-ecomm.git LEDGER_BRANCH=orders \
+LEDGER_USERNAME=iiitrke LEDGER_TOKEN=$(gh auth token) \
 docker compose up -d --build
 ```
+Then browse orders at https://github.com/iiitrke/iot-ecomm/blob/orders/ORDERS.md.
+Note: if the repository is public, order details (customer name, items) are public too. Use a private repository
+for real customers.
 To run the backend outside Docker (Kafka still in Docker on `localhost:19093`):
 ```bash
 docker compose up -d kafka
