@@ -1,0 +1,57 @@
+services:
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: iotecomm-kafka
+    ports:
+      - "19093:19093"   # SSL listener for a backend running on the host (localhost:19093)
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9094
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: SSL://0.0.0.0:9093,SSL_HOST://0.0.0.0:19093,CONTROLLER://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: SSL://kafka:9093,SSL_HOST://localhost:19093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SSL:SSL,SSL_HOST:SSL,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: SSL
+      # TLS: broker identity + require client certificates (mutual TLS)
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.keystore.jks
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: kafka_keystore_creds
+      KAFKA_SSL_KEY_CREDENTIALS: kafka_ssl_key_creds
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: kafka_truststore_creds
+      KAFKA_SSL_CLIENT_AUTH: required
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: https
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    volumes:
+      - ./certs/kafka:/etc/kafka/secrets:ro
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/9093"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build: ./backend
+    container_name: iotecomm-backend
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8443:8443"   # HTTPS endpoint the ESP32 talks to
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9093
+      CERT_DIR: /certs
+      CERT_PASSWORD: ${CERT_PASSWORD:-changeit}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-change-me-admin-key}
+      # Orders are committed as Markdown to this git repo (and pushed if LEDGER_REMOTE_URL is set)
+      LEDGER_DIR: /ledger
+      LEDGER_REMOTE_URL: ${LEDGER_REMOTE_URL:-}
+      LEDGER_USERNAME: ${LEDGER_USERNAME:-}
+      LEDGER_TOKEN: ${LEDGER_TOKEN:-}
+      LEDGER_BRANCH: ${LEDGER_BRANCH:-main}
+    volumes:
+      - ./certs/backend:/certs:ro
+      - ./order-ledger:/ledger

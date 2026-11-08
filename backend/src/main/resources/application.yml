@@ -1,0 +1,82 @@
+server:
+  port: 8443
+  ssl:
+    enabled: true
+    key-store: file:${CERT_DIR:../certs/backend}/backend-https.p12
+    key-store-type: PKCS12
+    key-store-password: ${CERT_PASSWORD:changeit}
+    key-alias: backend-https
+
+spring:
+  application:
+    name: iotecomm-backend
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:19093}
+    security:
+      protocol: SSL
+    ssl:
+      trust-store-location: file:${CERT_DIR:../certs/backend}/kafka.truststore.jks
+      trust-store-password: ${CERT_PASSWORD:changeit}
+      trust-store-type: JKS
+      key-store-location: file:${CERT_DIR:../certs/backend}/backend-kafka.p12
+      key-store-password: ${CERT_PASSWORD:changeit}
+      key-store-type: PKCS12
+      key-password: ${CERT_PASSWORD:changeit}
+    properties:
+      ssl.endpoint.identification.algorithm: https
+    producer:
+      acks: all
+      retries: 5
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+    consumer:
+      group-id: iotecomm-order-processor
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.value.default.type: com.iotecomm.kafka.OrderEvent
+        spring.json.trusted.packages: com.iotecomm.kafka
+
+iotecomm:
+  kafka:
+    orders-topic: iot.orders
+    send-timeout-seconds: 10
+  admin-api-key: ${ADMIN_API_KEY:change-me-admin-key}
+  currency: INR
+
+  # Orders are written as Markdown (orders/<id>.md + ORDERS.md index) and committed to this git repo.
+  # Set LEDGER_REMOTE_URL (+ username/token) to also push every commit to GitHub/GitLab.
+  ledger:
+    dir: ${LEDGER_DIR:../order-ledger}
+    branch: ${LEDGER_BRANCH:main}
+    remote-url: ${LEDGER_REMOTE_URL:}
+    username: ${LEDGER_USERNAME:}
+    token: ${LEDGER_TOKEN:}
+    author-name: ${LEDGER_AUTHOR_NAME:IoTEcomm Bot}
+    author-email: ${LEDGER_AUTHOR_EMAIL:iotecomm-bot@localhost}
+
+  # One entry per physical button on the device (SKUs must match firmware/include/config.h).
+  products:
+    - { sku: MILK-1L,   name: "Milk 1L",           price-cents: 6000 }
+    - { sku: BREAD-WW,  name: "Whole Wheat Bread", price-cents: 4500 }
+    - { sku: EGGS-12,   name: "Eggs (12)",         price-cents: 8400 }
+    - { sku: WATER-20L, name: "Water Can 20L",     price-cents: 9000 }
+
+  # Registered devices. api-key-sha256 = SHA-256 hex of the device API key.
+  #   echo -n 'your-device-key' | shasum -a 256
+  devices:
+    - id: esp32-kitchen-01
+      customer-name: Demo Customer
+      address: Demo Address
+      api-key-sha256: 9079ab3cb6a29b7d9f29c997dd92ccbb5dd24ca07fbf351642ec1ebbb861af0c   # change-me-device-key
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

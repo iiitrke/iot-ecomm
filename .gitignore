@@ -1,0 +1,18 @@
+# Secrets & generated certificates
+certs/
+firmware/include/secrets.h
+firmware/include/ca_cert.h
+.env
+
+# Order ledger repo (its own git repository)
+order-ledger/
+
+# Build output
+backend/target/
+firmware/.pio/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
