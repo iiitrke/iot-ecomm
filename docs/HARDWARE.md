@@ -136,3 +136,51 @@ Chip 3, outputs Q4–Q7, are spare.
    Good spare pins: 13, 14, 16, 17, 4.
 2. Add the product to `iotecomm.products` in `backend/src/main/resources/application.yml`.
 3. Shift registers needed: `ceil(products × 5 / 8)`. For example, 6 products need 4 chips and 8 products need 5. Chain each new chip's SER to the previous chip's Q7'.
+
+## Current With Everything On
+
+Worst case: every quantity LED lit (lamp test at boot, or all products at quantity 5) plus SUCCESS and PENDING.
+
+| Where | Current | Limit | Margin |
+|---|---|---|---|
+| 74HC595 chip 1 / chip 2 (8 LEDs each) | 8 × 4 mA = 32 mA | 70 mA | 46% used |
+| 74HC595 chip 3 (4 LEDs, Q4–Q7 spare) | 16 mA | 70 mA | 23% used |
+| ESP32 GPIO 21 / 22 / 2 (status LEDs) | ~4 mA each | 20 mA recommended, 40 mA max | |
+| ESP32 GPIO 23 / 18 / 19 (74HC595 inputs) | ~0 mA | | |
+| Buttons (internal pull-up, while pressed) | ~0.07 mA each | | |
+| **3.3 V rail, steady** | ~205 mA (LEDs ~91 mA + ESP32 ~100 mA + rest) | 800 mA (AMS1117) | ~25% |
+| **3.3 V rail, WiFi transmit peak** | ~555 mA for a few ms | 800 mA | ~70% |
+
+Regulator heat at steady load: (5 V − 3.3 V) × 0.205 A ≈ 0.35 W, so it feels warm. That is normal.
+LEDs on a fully lit 74HC595 can look slightly dimmer, because its outputs sag a little under load at 3.3 V.
+
+When it becomes unsafe (8 LEDs on per chip):
+
+| Resistor | Per LED | Per 74HC595 | Result |
+|---|---|---|---|
+| **330 Ω** (this design) | ~4 mA | 32 mA | Safe |
+| 220 Ω | ~6 mA | 48 mA | Safe, brighter |
+| 150 Ω | ~8.7 mA | ~70 mA | At the limit |
+| 100 Ω | ~13 mA | ~104 mA | Overloads the chip |
+| None | uncontrolled | | Damages LEDs and outputs |
+
+Things that do damage the ESP32: an LED without a resistor on a GPIO, **5 V on any GPIO** (pins are 3.3 V only),
+a HIGH pin shorted to GND, feeding 3.3 V into the 3V3 pin while USB is plugged in, and powering high-current loads
+(motors, LED strips) from the board's regulator. To drive anything above ~20 mA, use a transistor or MOSFET.
+
+## Why the Capacitors Are There
+
+A capacitor stores a small amount of charge and **resists sudden changes in voltage**.
+
+| Capacitor | Job | Without it |
+|---|---|---|
+| **100 nF ceramic at each 74HC595** (pins 16–8) | **Decoupling.** When the chip switches, it pulls a current spike lasting nanoseconds. The supply is too far away to respond in time, so the voltage at the chip dips. The capacitor sits right at the pins and supplies the spike locally. | Random flicker, wrong LEDs lit |
+| **10–100 µF electrolytic on 3.3 V** | **Bulk reservoir.** WiFi transmit pulls 300–500 mA bursts. The capacitor covers the dip. | ESP32 brownout-resets, often exactly when SUBMIT is pressed |
+
+Small ceramic capacitors are **fast** but hold little charge; electrolytics hold **a lot** but are slower. Using
+both covers fast spikes and longer dips.
+
+- **Place decoupling capacitors as close to the chip as possible**, with short legs. One 10 cm away doesn't help.
+- Ceramic codes are in pF: **104** = 10 + 0000 pF = **100 nF**; 103 = 10 nF; 105 = 1 µF. No polarity.
+- ⚠️ Electrolytics are polarized: **stripe = −** to GND. Reversed, they heat, bulge and can pop. Use a voltage
+  rating of at least 1.5–2× the circuit voltage (10 V or more here).

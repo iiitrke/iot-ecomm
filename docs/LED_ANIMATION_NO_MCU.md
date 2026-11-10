@@ -302,3 +302,107 @@ Tip: a **NE556** is two 555s in one 14-pin chip, so you need fewer parts.
 - **20 channels:** cascade two CD4017s using a CD4013 flip-flop to choose which counter is active.
 - **12 V LED strip segments** (non-addressable) can replace 5 mm LEDs. They already have resistors built in.
   Cut at the marks (every 3 LEDs, about 20 mA per segment) and use IRLZ44N MOSFETs.
+
+---
+
+## 12. Assembly on a Big Board
+
+How to go from a design drawing to a finished board with 10 groups of 20 LEDs (strings of 4).
+
+### 12.1 Plan on paper first
+
+1. **Draw the design at full size** and mark a dot for every LED. Spacing of **2–3 cm** looks smooth (up to 4 cm
+   with a diffuser). 200 LEDs at ~2.5 cm fit on a board of about **60 × 60 cm**.
+2. **Divide the dots into 10 groups** in the order the animation should run:
+
+   | Design | How to split into 10 groups |
+   |---|---|
+   | Sun / circle | 10 rays or pie slices → spinning |
+   | Concentric rings | ring 1 (center) … ring 10 (outer) → ripple |
+   | Name / word | 1 group per letter (≤ 10 letters) |
+   | Heart | horizontal bands bottom → top → "filling" heart |
+
+3. **Divide each group into strings** of 4 LEDs that are **physically close and in the same group**. Label every
+   dot, for example **G3-S2** (group 3, string 2). If a group's count isn't a multiple of 4, use some 3-LED
+   strings with a **390 Ω** resistor: (12 − 6) / 0.015 ≈ 400 Ω.
+
+### 12.2 Prepare the board
+
+| Material | Good for |
+|---|---|
+| **6 mm MDF or plywood** (recommended) | Strong, easy to drill and paint |
+| Foam board (5 mm) | Light, cuts with a knife, but weak for heavy wiring |
+| Black acrylic | Looks premium, but cracks when drilled; use a step bit |
+
+1. Print the design full size (tile A4 pages and tape them together) and tape it to the board.
+2. Mark each hole through the paper with an awl, and write the group label next to it on the **back**.
+3. Drill a 2 mm pilot hole, then **5 mm**. Clamp scrap wood behind the board to stop splintering.
+4. **Paint the front** (matte black or white) before inserting LEDs.
+
+### 12.3 Mount the LEDs
+
+- Insert each LED **from the front**, legs out the back.
+- **Orientation trick:** within a string, rotate each LED so its **long leg (+) points toward the previous LED**.
+  Then each short leg (−) bends straight over to the next LED's long leg (+).
+- Fix each LED with a drop of **hot glue** on the back. Optional: chrome LED bezels on the front.
+
+### 12.4 Wire the back
+
+One string:
+```
+ +12V bus ──[270Ω]──(+)LED1(−)──(+)LED2(−)──(+)LED3(−)──(+)LED4(−)──► channel wire G3
+              ↑ resistor right at the first LED          legs bent and soldered directly
+```
+
+Whole board (back view):
+```
+ ┌──────────────────────────────────────────────────────────┐
+ │  ════════ +12V bus (bare tinned copper wire / red) ════════ │  ← runs around the board
+ │   │      │       │        │                              │
+ │  [R]    [R]     [R]      [R]   ← one resistor per string │
+ │   ●─●─●─●  ●─●─●─●  ●─●─●─●  ●─●─●─●    LED strings        │
+ │         │        │        │        │                     │
+ │         └── G0 ──┘        └── G1 ──┘   ← string ends of the same
+ │              │                 │         group joined into 1 channel wire
+ │              └────────┬────────┘                          │
+ │                       ▼                                   │
+ │        ┌───────────────────────────────┐                  │
+ │        │  CONTROLLER (perfboard)       │                  │
+ │        │  555 + 4017 + 10 MOSFETs      │ ◄── 12V DC jack  │
+ │        │  screw terminals: +12V, G0…G9 │                  │
+ │        └───────────────────────────────┘                  │
+ └──────────────────────────────────────────────────────────┘
+```
+
+- **+12V bus:** bare tinned copper wire (0.8–1 mm) or red 22 AWG as a loop or spine across the back. Each string's
+  resistor solders onto it.
+- **Channel wires:** join the (−) end of every string in a group into one wire back to that MOSFET's drain. Use
+  **one wire color per group**, or label both ends with masking tape (G0…G9).
+- A **12-wire ribbon cable** (10 channels + 12V + spare) between the LED area and the controller keeps it tidy.
+- Mount the **controller perfboard** on the back with standoffs. **Screw terminals** for the channel wires make
+  repairs easy.
+- Insulate joints with **heat-shrink tubing**; crossing bare legs will short.
+- Secure wires with hot glue or adhesive cable-tie mounts every 10–15 cm.
+
+### 12.5 Test while building
+
+1. **Each string before soldering it in:** 12V through the resistor to the first LED, (−) end to GND. All 4 light.
+   A multimeter in **diode mode** lights a single LED to check it.
+2. **Each group:** touch its channel wire to GND. The whole group lights, even without the controller.
+3. Connect the controller **one group at a time**.
+
+A dark string means one LED in it is **broken or reversed**: one open LED turns off the whole series string.
+
+### 12.6 Finishing
+
+- **Diffuser:** frosted acrylic or tracing paper **1.5–3 cm in front**, on spacers.
+- **Frame:** wooden strips around the edge hide the wiring depth (~3–4 cm) and hold the diffuser.
+- Put the **DC jack and speed knob** on an edge you can reach.
+- Hang it with two D-rings or picture wire.
+
+**Tools:** soldering iron (~350 °C), helping hands, hot glue gun, drill with 2 mm and 5 mm bits, wire stripper,
+multimeter. 12 V is safe to touch, but **a short circuit heats wires quickly**, so keep the **1 A fuse** in the
++12V line. Solder in a ventilated room.
+
+**Order of work:** paper plan → drill → paint → insert LEDs → wire strings → test strings → channel wires → test
+groups → controller → diffuser and frame.

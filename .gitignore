@@ -10,6 +10,7 @@ order-ledger/
 # Build output
 backend/target/
 firmware/.pio/
+led-animation/.pio/
 
 # IDE / OS
 .idea/
