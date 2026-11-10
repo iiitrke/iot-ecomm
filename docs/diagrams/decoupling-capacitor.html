@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Decoupling Capacitor Bench Notes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: single reading column of bench notes; each diagram sits on a faint lab-grid panel */
+:root {
+  --bg: #f2f4ef;
+  --panel: #fbfcf9;
+  --grid: #e1e6de;
+  --ink: #1c231f;
+  --muted: #59645d;
+  --line: #cfd6cc;
+  --vcc: #c23b2a;
+  --gnd: #333b40;
+  --fast: #16865a;
+  --slow: #c27c0e;
+  --sig: #2f62b8;
+  --led: #d08a00;
+  --chip: #23292d;
+  --chip-ink: #e9ece8;
+  --pin: #9aa4a8;
+  --copper: #b0622c;
+  --display: "Chakra Petch", "Arial Narrow", sans-serif;
+  --body: "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121714; --panel: #171e1a; --grid: #222b25; --ink: #e3e8e2; --muted: #9aa69e; --line: #2f3a33;
+    --vcc: #ff7a66; --gnd: #b4bec4; --fast: #3fd08f; --slow: #f0aa3a; --sig: #79a6ff; --led: #ffc24a;
+    --chip: #0b0e0c; --chip-ink: #dfe5df; --pin: #8d979b; --copper: #e08a4f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121714; --panel: #171e1a; --grid: #222b25; --ink: #e3e8e2; --muted: #9aa69e; --line: #2f3a33;
+  --vcc: #ff7a66; --gnd: #b4bec4; --fast: #3fd08f; --slow: #f0aa3a; --sig: #79a6ff; --led: #ffc24a;
+  --chip: #0b0e0c; --chip-ink: #dfe5df; --pin: #8d979b; --copper: #e08a4f; color-scheme: dark;
+}
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+main { max-width: 980px; margin: 0 auto; display: grid; gap: 40px; }
+header { display: grid; gap: 8px; max-width: 68ch; }
+.eyebrow { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--copper); }
+h1 { font: 700 clamp(28px, 5vw, 44px)/1.1 var(--display); margin: 0; text-wrap: balance; }
+h2 { font: 700 24px/1.2 var(--display); margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 68ch; }
+.lede { color: var(--muted); font-size: 18px; }
+section { display: grid; gap: 14px; }
+.fig {
+  background-color: var(--panel);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 20px 20px;
+  border: 1px solid var(--line); border-radius: 6px; overflow-x: auto;
+}
+.fig svg { display: block; width: 100%; min-width: 660px; height: auto; }
+.cap { font: 13px/1.5 var(--mono); color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font: 13px/1.4 var(--mono); color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 22px; height: 0; border-top: 3px solid; display: inline-block; }
+.sw.dash { border-top-style: dashed; }
+table { border-collapse: collapse; font: 14px/1.4 var(--mono); width: 100%; }
+.tablewrap { overflow-x: auto; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-weight: 600; color: var(--muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+td { font-variant-numeric: tabular-nums; }
+ol { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 68ch; }
+
+/* SVG styling through tokens */
+svg text { font-family: var(--mono); fill: var(--ink); }
+svg .t-muted { fill: var(--muted); }
+svg .t-title { font-family: var(--display); font-weight: 700; }
+svg .t-chip { fill: var(--chip-ink); }
+svg .t-vcc { fill: var(--vcc); } svg .t-gnd { fill: var(--gnd); }
+svg .t-fast { fill: var(--fast); } svg .t-slow { fill: var(--slow); }
+svg .t-sig { fill: var(--sig); } svg .t-led { fill: var(--led); }
+.w-vcc { stroke: var(--vcc); fill: none; stroke-width: 3; }
+.w-gnd { stroke: var(--gnd); fill: none; stroke-width: 3; }
+.w-sig { stroke: var(--sig); fill: none; stroke-width: 3; }
+.w-led { stroke: var(--led); fill: none; stroke-width: 3; }
+.w-ink { stroke: var(--ink); fill: none; stroke-width: 2; }
+.w-muted { stroke: var(--muted); fill: none; stroke-width: 1.5; }
+.dot-vcc { fill: var(--vcc); } .dot-gnd { fill: var(--gnd); }
+.chip { fill: var(--chip); stroke: var(--pin); stroke-width: 1.5; }
+.supply { fill: var(--panel); stroke: var(--ink); stroke-width: 2; }
+.notch { fill: var(--panel); stroke: var(--pin); stroke-width: 1.5; }
+.loop-fast { stroke: var(--fast); fill: none; stroke-width: 3; stroke-dasharray: 9 7; animation: flow 0.6s linear infinite; }
+.loop-slow { stroke: var(--slow); fill: none; stroke-width: 3; stroke-dasharray: 9 7; animation: flow 2.4s linear infinite; }
+.m-fast { fill: var(--fast); } .m-slow { fill: var(--slow); }
+.wave-bad { stroke: var(--vcc); fill: none; stroke-width: 2.5; }
+.wave-good { stroke: var(--fast); fill: none; stroke-width: 2.5; }
+.axis { stroke: var(--line); stroke-width: 1.5; fill: none; }
+.ref { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 4; fill: none; }
+.panelbg { fill: var(--panel); stroke: var(--line); }
+@keyframes flow { to { stroke-dashoffset: -32; } }
+@media (prefers-reduced-motion: reduce) { .loop-fast, .loop-slow { animation: none; } }
+</style>
+</head>
+<body>
+
+<main>
+  <header>
+    <div class="eyebrow">IoTEcomm bench notes · 74HC595 at 3.3 V</div>
+    <h1>Where the long wire is, and why the 100 nF sits at the chip</h1>
+    <p class="lede">The power supply is far away at the end of long wires. The 100 nF capacitor is a small charged tank a few millimetres from the chip's VCC and GND pins. When the chip switches, the capacitor supplies the burst; the long wire refills it afterwards.</p>
+  </header>
+
+  <section>
+    <h2>1 · The two current loops</h2>
+    <div class="fig">
+      <svg viewBox="0 0 960 440" role="img" aria-label="Power supply connected by long VCC and GND wires to a 74HC595. A 100 nF capacitor sits next to the chip. A small fast loop runs capacitor to VCC pin to GND pin and back; a large slow loop runs from the supply through the long wires to refill the capacitor.">
+        <defs>
+          <marker id="af" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="m-fast" d="M0 0 L10 5 L0 10 z"/></marker>
+          <marker id="as" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="m-slow" d="M0 0 L10 5 L0 10 z"/></marker>
+        </defs>
+
+        <!-- Power supply -->
+        <rect class="supply" x="30" y="60" width="130" height="300" rx="8"/>
+        <text class="t-title" x="95" y="195" text-anchor="middle" font-size="17">POWER</text>
+        <text class="t-muted" x="95" y="218" text-anchor="middle" font-size="12">USB 5 V →</text>
+        <text class="t-muted" x="95" y="234" text-anchor="middle" font-size="12">3.3 V regulator</text>
+        <text class="t-vcc" x="146" y="86" text-anchor="end" font-size="16" font-weight="600">+</text>
+        <text class="t-gnd" x="146" y="348" text-anchor="end" font-size="16" font-weight="600">−</text>
+
+        <!-- VCC long wire: resistance (zigzag) + inductance (coil) -->
+        <path class="w-vcc" d="M160 90 H250 l7 -10 l14 20 l14 -20 l14 20 l14 -20 l14 20 l7 -10 H390 q10 -20 20 0 q10 -20 20 0 q10 -20 20 0 q10 -20 20 0 H730 V140"/>
+        <!-- GND long wire -->
+        <path class="w-gnd" d="M160 330 H250 l7 10 l14 -20 l14 20 l14 -20 l14 20 l14 -20 l7 10 H390 q10 20 20 0 q10 20 20 0 q10 20 20 0 q10 20 20 0 H730 V290"/>
+        <text class="t-vcc" x="200" y="76" text-anchor="middle" font-size="12">VCC 3.3 V</text>
+        <text class="t-gnd" x="200" y="360" text-anchor="middle" font-size="12">GND 0 V</text>
+        <text class="t-muted" x="292" y="64" text-anchor="middle" font-size="12">wire resistance</text>
+        <text class="t-muted" x="430" y="64" text-anchor="middle" font-size="12">wire inductance</text>
+        <text class="t-muted" x="292" y="378" text-anchor="middle" font-size="12">wire resistance</text>
+        <text class="t-muted" x="430" y="378" text-anchor="middle" font-size="12">wire inductance</text>
+
+        <!-- Long-wire annotation -->
+        <text class="t-title" x="390" y="175" text-anchor="middle" font-size="18">LONG WIRE</text>
+        <text class="t-muted" x="390" y="198" text-anchor="middle" font-size="12">jumper wires + breadboard rails, 20–50 cm</text>
+        <text class="t-muted" x="390" y="216" text-anchor="middle" font-size="12">its resistance and inductance make it slow:</text>
+        <text class="t-muted" x="390" y="234" text-anchor="middle" font-size="12">it can't deliver a burst lasting nanoseconds</text>
+        <text class="t-slow" x="390" y="266" text-anchor="middle" font-size="12" font-weight="600">slow loop: refills the capacitor</text>
+
+        <!-- Slow loop (supply -> long wire -> capacitor -> long wire -> supply) -->
+        <path class="loop-slow" d="M172 316 V104 H626 V186"/>
+        <path class="loop-slow" d="M626 228 V316 H172"/>
+        <path class="m-slow" d="M380 98 l12 6 l-12 6 z"/>
+        <path class="m-slow" d="M392 310 l-12 6 l12 6 z"/>
+
+        <!-- 100 nF capacitor right at the chip -->
+        <path class="w-vcc" d="M640 90 V200"/>
+        <path class="w-gnd" d="M640 214 V330"/>
+        <path class="w-ink" stroke-width="4" d="M618 200 H662 M618 214 H662"/>
+        <circle class="dot-vcc" cx="640" cy="90" r="5"/>
+        <circle class="dot-gnd" cx="640" cy="330" r="5"/>
+        <text x="604" y="203" text-anchor="end" font-size="13" font-weight="600">100 nF</text>
+        <text class="t-muted" x="604" y="220" text-anchor="end" font-size="11">"104", ceramic</text>
+
+        <!-- 74HC595 block -->
+        <rect class="chip" x="700" y="140" width="160" height="150" rx="5"/>
+        <text class="t-chip t-title" x="800" y="210" text-anchor="middle" font-size="17">74HC595</text>
+        <text class="t-chip" x="800" y="230" text-anchor="middle" font-size="11" opacity=".75">switches in ~10 ns</text>
+        <text class="t-vcc" x="740" y="132" font-size="12">pin 16 VCC</text>
+        <text class="t-gnd" x="740" y="306" font-size="12">pin 8 GND</text>
+        <path class="w-led" d="M860 175 H900 M860 215 H900 M860 255 H900"/>
+        <text class="t-led" x="904" y="219" font-size="12">LEDs</text>
+
+        <!-- Fast loop (capacitor -> pin 16 -> through chip -> pin 8 -> capacitor) -->
+        <path class="loop-fast" d="M652 188 V104 H718 V316 H652 V226"/>
+        <path class="m-fast" d="M682 98 l12 6 l-12 6 z"/>
+        <path class="m-fast" d="M712 230 l6 12 l6 -12 z"/>
+        <path class="m-fast" d="M694 310 l-12 6 l12 6 z"/>
+        <text class="t-fast" x="685" y="410" text-anchor="middle" font-size="12" font-weight="600">fast loop: a few mm long</text>
+        <path class="w-muted" d="M685 396 V330"/>
+      </svg>
+    </div>
+    <div class="legend">
+      <span><i class="sw dash" style="border-color:var(--fast)"></i>Fast loop: the burst for each switch, from the capacitor (nanoseconds)</span>
+      <span><i class="sw dash" style="border-color:var(--slow)"></i>Slow loop: the supply refills the capacitor through the long wire</span>
+      <span><i class="sw" style="border-color:var(--vcc)"></i>VCC</span>
+      <span><i class="sw" style="border-color:var(--gnd)"></i>GND</span>
+    </div>
+    <p>Follow the green loop: current leaves the capacitor's VCC leg, enters <b>pin 16</b>, passes through the chip, leaves at <b>pin 8</b>, and returns into the capacitor's GND leg. It uses both pins. The shorter this loop, the better, which is why the capacitor goes right next to the chip.</p>
+  </section>
+
+  <section>
+    <h2>2 · The 74HC595 chip, pin by pin</h2>
+    <div class="fig">
+      <svg viewBox="0 0 800 440" role="img" aria-label="74HC595 DIP-16 pinout, top view with notch on the left. Top row pins 16 to 9: VCC, Q0, SER, OE, RCLK, SRCLK, MR, Q7 prime. Bottom row pins 1 to 8: Q1 to Q7 and GND. Each pin is labelled with what it connects to in this project.">
+        <!-- Body: horizontal, as it sits on a breadboard, notch at left -->
+        <rect class="chip" x="190" y="170" width="380" height="96" rx="5"/>
+        <path class="notch" d="M190 202 a16 16 0 0 1 0 32 z"/>
+        <circle fill="var(--pin)" cx="200" cy="252" r="4"/>
+
+        <!-- Top pins 16..9 -->
+        <g>
+          <rect fill="var(--vcc)" x="217" y="152" width="12" height="18"/>
+          <rect fill="var(--led)" x="262" y="152" width="12" height="18"/>
+          <rect fill="var(--sig)" x="307" y="152" width="12" height="18"/>
+          <rect fill="var(--gnd)" x="352" y="152" width="12" height="18"/>
+          <rect fill="var(--sig)" x="397" y="152" width="12" height="18"/>
+          <rect fill="var(--sig)" x="442" y="152" width="12" height="18"/>
+          <rect fill="var(--vcc)" x="487" y="152" width="12" height="18"/>
+          <rect fill="var(--sig)" x="532" y="152" width="12" height="18"/>
+        </g>
+        <g font-size="11" text-anchor="middle">
+          <text class="t-chip" x="223" y="188">16</text><text class="t-chip" x="268" y="188">15</text><text class="t-chip" x="313" y="188">14</text><text class="t-chip" x="358" y="188">13</text>
+          <text class="t-chip" x="403" y="188">12</text><text class="t-chip" x="448" y="188">11</text><text class="t-chip" x="493" y="188">10</text><text class="t-chip" x="538" y="188">9</text>
+          <text class="t-chip" x="223" y="204" font-weight="600">VCC</text><text class="t-chip" x="268" y="204" font-weight="600">Q0</text><text class="t-chip" x="313" y="204" font-weight="600">SER</text><text class="t-chip" x="358" y="204" font-weight="600">OE</text>
+          <text class="t-chip" x="403" y="204" font-weight="600">RCLK</text><text class="t-chip" x="448" y="204" font-weight="600">SRCLK</text><text class="t-chip" x="493" y="204" font-weight="600">MR</text><text class="t-chip" x="538" y="204" font-weight="600">Q7'</text>
+        </g>
+        <g font-size="12">
+          <text class="t-vcc" transform="translate(223 142) rotate(-55)">3.3 V + 100 nF</text>
+          <text class="t-led" transform="translate(268 142) rotate(-55)">330 Ω → LED</text>
+          <text class="t-sig" transform="translate(313 142) rotate(-55)">GPIO23 · DATA</text>
+          <text class="t-gnd" transform="translate(358 142) rotate(-55)">GND (always on)</text>
+          <text class="t-sig" transform="translate(403 142) rotate(-55)">GPIO19 · LATCH</text>
+          <text class="t-sig" transform="translate(448 142) rotate(-55)">GPIO18 · CLOCK</text>
+          <text class="t-vcc" transform="translate(493 142) rotate(-55)">3.3 V (no reset)</text>
+          <text class="t-sig" transform="translate(538 142) rotate(-55)">next chip SER</text>
+        </g>
+
+        <!-- Bottom pins 1..8 -->
+        <g>
+          <rect fill="var(--led)" x="217" y="266" width="12" height="18"/>
+          <rect fill="var(--led)" x="262" y="266" width="12" height="18"/>
+          <rect fill="var(--led)" x="307" y="266" width="12" height="18"/>
+          <rect fill="var(--led)" x="352" y="266" width="12" height="18"/>
+          <rect fill="var(--led)" x="397" y="266" width="12" height="18"/>
+          <rect fill="var(--led)" x="442" y="266" width="12" height="18"/>
+          <rect fill="var(--led)" x="487" y="266" width="12" height="18"/>
+          <rect fill="var(--gnd)" x="532" y="266" width="12" height="18"/>
+        </g>
+        <g font-size="11" text-anchor="middle">
+          <text class="t-chip" x="223" y="240" font-weight="600">Q1</text><text class="t-chip" x="268" y="240" font-weight="600">Q2</text><text class="t-chip" x="313" y="240" font-weight="600">Q3</text><text class="t-chip" x="358" y="240" font-weight="600">Q4</text>
+          <text class="t-chip" x="403" y="240" font-weight="600">Q5</text><text class="t-chip" x="448" y="240" font-weight="600">Q6</text><text class="t-chip" x="493" y="240" font-weight="600">Q7</text><text class="t-chip" x="538" y="240" font-weight="600">GND</text>
+          <text class="t-chip" x="223" y="256">1</text><text class="t-chip" x="268" y="256">2</text><text class="t-chip" x="313" y="256">3</text><text class="t-chip" x="358" y="256">4</text>
+          <text class="t-chip" x="403" y="256">5</text><text class="t-chip" x="448" y="256">6</text><text class="t-chip" x="493" y="256">7</text><text class="t-chip" x="538" y="256">8</text>
+        </g>
+        <g font-size="12">
+          <text class="t-led" transform="translate(223 298) rotate(55)">330 Ω → LED</text>
+          <text class="t-led" transform="translate(268 298) rotate(55)">330 Ω → LED</text>
+          <text class="t-led" transform="translate(313 298) rotate(55)">330 Ω → LED</text>
+          <text class="t-led" transform="translate(358 298) rotate(55)">330 Ω → LED</text>
+          <text class="t-led" transform="translate(403 298) rotate(55)">330 Ω → LED</text>
+          <text class="t-led" transform="translate(448 298) rotate(55)">330 Ω → LED</text>
+          <text class="t-led" transform="translate(493 298) rotate(55)">330 Ω → LED</text>
+          <text class="t-gnd" transform="translate(538 298) rotate(55)">GND + 100 nF</text>
+        </g>
+
+        <!-- Side notes -->
+        <text class="t-muted" x="30" y="214" font-size="12">notch = left</text>
+        <text class="t-muted" x="30" y="232" font-size="12">dot = pin 1</text>
+        <text class="t-title" x="600" y="212" font-size="16">TOP VIEW</text>
+        <text class="t-muted" x="600" y="232" font-size="12">as on the breadboard</text>
+      </svg>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="border-color:var(--vcc)"></i>3.3 V</span>
+      <span><i class="sw" style="border-color:var(--gnd)"></i>GND</span>
+      <span><i class="sw" style="border-color:var(--sig)"></i>Signal from the ESP32 or the chain</span>
+      <span><i class="sw" style="border-color:var(--led)"></i>LED output</span>
+    </div>
+    <p>Pin numbers run counter-clockwise from the dot: 1–8 along the bottom from left to right, then 9–16 along the top from right to left. That's why <b>VCC (16)</b> and <b>GND (8)</b> end up at opposite corners. On a breadboard, plug the 100 nF capacitor from the pin 16 row to the GND rail right beside the chip, and keep both legs short.</p>
+  </section>
+
+  <section>
+    <h2>3 · What the chip's VCC pin sees</h2>
+    <div class="fig">
+      <svg viewBox="0 0 900 270" role="img" aria-label="Illustrative voltage at the VCC pin. Without the capacitor, the voltage dips sharply from 3.3 V to about 2.7 V at each switch and rings. With the capacitor it stays nearly flat at 3.3 V.">
+        <rect class="panelbg" x="20" y="20" width="420" height="230" rx="6"/>
+        <rect class="panelbg" x="460" y="20" width="420" height="230" rx="6"/>
+        <text class="t-title t-vcc" x="40" y="48" font-size="15">WITHOUT 100 nF</text>
+        <text class="t-title t-fast" x="480" y="48" font-size="15">WITH 100 nF AT THE PINS</text>
+
+        <g font-size="11" text-anchor="end">
+          <text class="t-muted" x="76" y="84">3.3 V</text><text class="t-muted" x="76" y="144">3.0 V</text><text class="t-muted" x="76" y="204">2.7 V</text>
+          <text class="t-muted" x="516" y="84">3.3 V</text><text class="t-muted" x="516" y="144">3.0 V</text><text class="t-muted" x="516" y="204">2.7 V</text>
+        </g>
+        <path class="axis" d="M84 70 V220 H424 M524 70 V220 H864"/>
+        <path class="ref" d="M84 140 H424 M84 200 H424 M524 140 H864 M524 200 H864"/>
+
+        <path class="wave-bad" d="M84 80 H140 L145 196 L151 60 L157 112 L163 70 L169 90 L175 78 H240 L245 190 L251 62 L257 110 L263 72 L269 88 L275 79 H340 L345 194 L351 61 L357 112 L363 71 L369 89 L375 79 H424"/>
+        <path class="wave-good" d="M524 80 H580 L583 84 L587 79 H680 L683 84 L687 79 H780 L783 84 L787 79 H864"/>
+
+        <text class="t-muted" x="254" y="240" text-anchor="middle" font-size="11">each dip = one clock or latch edge</text>
+        <text class="t-muted" x="694" y="240" text-anchor="middle" font-size="11">dip ≈ 5 mV, the chip never notices</text>
+      </svg>
+    </div>
+    <p class="cap">Illustrative shapes, not a measurement. Dips this short (nanoseconds) are invisible to a multimeter; an oscilloscope shows them. On the left, the dips can push the chip below a clean logic level, so you see flicker or wrong LEDs.</p>
+  </section>
+
+  <section>
+    <h2>4 · Where each capacitor goes in your projects</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Chip</th><th>VCC pin</th><th>GND pin</th><th>Capacitor</th><th>Project</th></tr></thead>
+        <tbody>
+          <tr><td>74HC595 (×3)</td><td>16</td><td>8</td><td>100 nF each</td><td>IoT ordering device</td></tr>
+          <tr><td>ESP32 DevKit</td><td>3V3</td><td>GND</td><td>10–100 µF bulk</td><td>IoT ordering device</td></tr>
+          <tr><td>NE555</td><td>8</td><td>1</td><td>100 nF</td><td>LED board (no ESP32)</td></tr>
+          <tr><td>CD4017</td><td>16</td><td>8</td><td>100 nF</td><td>LED board (no ESP32)</td></tr>
+          <tr><td>74AHCT125</td><td>14</td><td>7</td><td>100 nF</td><td>WS2812B board</td></tr>
+          <tr><td>WS2812B strip input</td><td>+5V</td><td>GND</td><td>1000 µF bulk</td><td>WS2812B board</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ol>
+      <li>One 100 nF ceramic per chip, connected straight across that chip's VCC and GND pins.</li>
+      <li>As close to the chip as you can, with legs trimmed short. A capacitor 10 cm away is on the slow side of the long wire and doesn't help.</li>
+      <li>The bulk electrolytic (µF) covers longer, larger dips such as WiFi bursts. Its stripe (−) goes to GND.</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>

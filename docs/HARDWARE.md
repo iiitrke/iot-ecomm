@@ -184,3 +184,7 @@ both covers fast spikes and longer dips.
 - Ceramic codes are in pF: **104** = 10 + 0000 pF = **100 nF**; 103 = 10 nF; 105 = 1 µF. No polarity.
 - ⚠️ Electrolytics are polarized: **stripe = −** to GND. Reversed, they heat, bulge and can pop. Use a voltage
   rating of at least 1.5–2× the circuit voltage (10 V or more here).
+
+Diagrams of the long wire, the capacitor's fast and slow current loops, and the 74HC595 pinout:
+[diagrams/decoupling-capacitor.html](diagrams/decoupling-capacitor.html) (download it and open it in a browser;
+GitHub shows HTML files as source).
