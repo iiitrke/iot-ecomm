@@ -83,6 +83,8 @@ cp firmware/include/secrets.example.h firmware/include/secrets.h   # edit WiFi, 
 cd firmware && pio run -t upload && pio device monitor
 ```
 Wire it according to **[docs/HARDWARE.md](docs/HARDWARE.md)**, which has the full component list.
+To learn how the circuit works (components, GND, capacitors, voltage checks, single-board PCB), see
+**[docs/ELECTRONICS_GUIDE.md](docs/ELECTRONICS_GUIDE.md)**.
 
 ## Using the Device
 
